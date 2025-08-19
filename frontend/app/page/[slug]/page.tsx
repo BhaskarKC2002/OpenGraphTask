@@ -85,6 +85,14 @@ export async function generateMetadata(props: { params: Promise<{ slug: string }
   const url = makeAbsoluteHttps(base, data.openGraph.url || `${base}/page/${slug}`)!;
   const twitterPoster = poster.includes('/api/og') ? `${base}/sample.jpg${v}` : poster;
 
+  // Optimize for Twitter/X visibility: use smaller "summary" card when text is long, and clamp lengths
+  const clamp = (text: string, max: number) => (text.length > max ? `${text.slice(0, max - 1)}…` : text);
+  const twitterTitle = clamp(data.openGraph.title ?? data.title, 70);
+  const twitterDescription = clamp(data.openGraph.description ?? data.description, 200);
+  const twitterCard: 'summary' | 'summary_large_image' = hasVideo
+    ? 'summary_large_image'
+    : (twitterDescription.length > 120 ? 'summary' : 'summary_large_image');
+
   return {
     title: data.openGraph.title ?? data.title,
     description: data.openGraph.description ?? data.description,
@@ -98,7 +106,7 @@ export async function generateMetadata(props: { params: Promise<{ slug: string }
         ? [{ url: videoUrl, width: data.openGraph.videoWidth || 1200, height: data.openGraph.videoHeight || 630, type: data.openGraph.videoType || 'video/mp4' }]
         : undefined,
     },
-    twitter: { card: (data.twitter?.card as any) || 'summary_large_image', title: data.openGraph.title, description: data.openGraph.description, images: [twitterPoster] },
+    twitter: { card: twitterCard as any, title: twitterTitle, description: twitterDescription, images: [twitterPoster] },
   } satisfies Metadata;
 }
 
