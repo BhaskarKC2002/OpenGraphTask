@@ -1,4 +1,4 @@
-import PageModel from './pages/model.js';
+import { PageModel, Page } from './pages/model.js';
 
 function getPublicUrl(): string {
   // Prefer PUBLIC_URL (publicly reachable), fall back to SITE_URL, then localhost
@@ -138,7 +138,7 @@ export async function seedIfEmpty() {
     }
   ];
 
-  await PageModel.insertMany(pages);
+  await PageModel.insertMany(pages as unknown as Page[]);
   console.log('Seeded default pages');
 }
 

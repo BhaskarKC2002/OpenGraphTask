@@ -1,4 +1,4 @@
-import mongoose, { Schema, InferSchemaType } from 'mongoose';
+import mongoose, { Schema, InferSchemaType, Model } from 'mongoose';
 
 const OpenGraphSchema = new Schema({
   title: { type: String, required: true },
@@ -28,6 +28,10 @@ const PageSchema = new Schema({
 
 export type Page = InferSchemaType<typeof PageSchema>;
 
-export default mongoose.models.Page || mongoose.model('Page', PageSchema);
+// Ensure the model is strongly typed to avoid union type issues with Mongoose typings
+export const PageModel: Model<Page> =
+  (mongoose.models.Page as Model<Page>) || mongoose.model<Page>('Page', PageSchema);
+
+export default PageModel;
 
 

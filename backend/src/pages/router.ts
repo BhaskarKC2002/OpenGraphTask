@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import PageModel from './model.js';
+import { PageModel } from './model.js';
 import { z } from 'zod';
 
 const router = Router();
@@ -30,12 +30,12 @@ const upsertSchema = z.object({
 });
 
 router.get('/', async (_req, res) => {
-  const pages = await PageModel.find({}, { __v: 0 }).lean();
+  const pages = await PageModel.find({}, { __v: 0 }).lean().exec();
   res.json(pages);
 });
 
 router.get('/:slug', async (req, res) => {
-  const page = await PageModel.findOne({ slug: req.params.slug }, { __v: 0 }).lean();
+  const page = await PageModel.findOne({ slug: req.params.slug }, { __v: 0 }).lean().exec();
   if (!page) return res.status(404).json({ message: 'Not found' });
   res.json(page);
 });
@@ -50,7 +50,7 @@ router.post('/', async (req, res) => {
     { slug: data.slug },
     data,
     { upsert: true, new: true, setDefaultsOnInsert: true }
-  ).lean();
+  ).lean().exec();
   res.status(201).json(page);
 });
 
