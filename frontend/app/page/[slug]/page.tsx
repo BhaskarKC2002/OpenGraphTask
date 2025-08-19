@@ -23,9 +23,23 @@ type PageData = {
 
 function makeAbsoluteHttps(base: string, maybeUrl?: string): string | undefined {
   if (!maybeUrl) return undefined;
+  // Root-relative path → same-origin absolute URL
   if (maybeUrl.startsWith('/')) return `${base}${maybeUrl}`;
-  if (maybeUrl.startsWith('http://')) return `https://${maybeUrl.slice('http://'.length)}`;
-  return maybeUrl;
+  try {
+    const baseUrl = new URL(base);
+    const url = new URL(maybeUrl);
+    // Upgrade protocol to https
+    if (url.protocol === 'http:') url.protocol = 'https:';
+    // If pointing to localhost/127.0.0.1, rewrite to current site origin
+    if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') {
+      url.protocol = baseUrl.protocol;
+      url.host = baseUrl.host;
+    }
+    return url.toString();
+  } catch {
+    // Unknown format → return as-is
+    return maybeUrl;
+  }
 }
 
 async function getPage(slug: string): Promise<PageData | null> {
@@ -48,7 +62,7 @@ export async function generateMetadata(props: { params: Promise<{ slug: string }
   const hasVideo = Boolean(data.openGraph.video);
   const poster = makeAbsoluteHttps(base, data.openGraph.image) || (hasVideo ? `${base}/sample.jpg` : `${base}/api/og?title=${encodeURIComponent(data.openGraph.title)}&description=${encodeURIComponent(data.openGraph.description)}`);
   const videoUrl = makeAbsoluteHttps(base, data.openGraph.video);
-  const url = data.openGraph.url || `${base}/page/${slug}`;
+  const url = makeAbsoluteHttps(base, data.openGraph.url || `${base}/page/${slug}`)!;
 
   return {
     title: data.openGraph.title ?? data.title,
