@@ -83,6 +83,7 @@ export async function generateMetadata(props: { params: Promise<{ slug: string }
   const poster = (makeAbsoluteHttps(base, data.openGraph.image) || (hasVideo ? `${base}/sample.jpg` : `${base}/api/og?title=${encodeURIComponent(data.openGraph.title)}&description=${encodeURIComponent(data.openGraph.description)}`)) + v;
   const videoUrl = makeAbsoluteHttps(base, data.openGraph.video ? `${data.openGraph.video}${v}` : undefined);
   const url = makeAbsoluteHttps(base, data.openGraph.url || `${base}/page/${slug}`)!;
+  const twitterPoster = poster.includes('/api/og') ? `${base}/sample.jpg${v}` : poster;
 
   return {
     title: data.openGraph.title ?? data.title,
@@ -97,7 +98,7 @@ export async function generateMetadata(props: { params: Promise<{ slug: string }
         ? [{ url: videoUrl, width: data.openGraph.videoWidth || 1200, height: data.openGraph.videoHeight || 630, type: data.openGraph.videoType || 'video/mp4' }]
         : undefined,
     },
-    twitter: { card: (data.twitter?.card as any) || 'summary_large_image', title: data.openGraph.title, description: data.openGraph.description, images: [poster] },
+    twitter: { card: (data.twitter?.card as any) || 'summary_large_image', title: data.openGraph.title, description: data.openGraph.description, images: [twitterPoster] },
   } satisfies Metadata;
 }
 
