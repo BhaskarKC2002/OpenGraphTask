@@ -9,7 +9,11 @@ import pagesRouter from './pages/router.js';
 import { seedIfEmpty } from './seed.js';
 
 const app = express();
-app.use(cors());
+// Allow all by default; optionally restrict via ALLOWED_ORIGINS (comma-separated)
+const allowed = process.env.ALLOWED_ORIGINS?.split(',').map(s => s.trim()).filter(Boolean);
+app.use(cors({
+  origin: allowed && allowed.length > 0 ? allowed : true,
+}));
 app.use(express.json());
 
 app.get('/health', (_req, res) => {
