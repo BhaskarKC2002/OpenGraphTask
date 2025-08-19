@@ -33,7 +33,12 @@ function makeAbsoluteHttps(base: string, maybeUrl?: string): string | undefined 
     // If pointing to localhost/127.0.0.1, rewrite to current site origin
     if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') {
       url.protocol = baseUrl.protocol;
-      url.host = baseUrl.host;
+      url.hostname = baseUrl.hostname;
+      url.port = baseUrl.port; // usually empty on production
+    }
+    // If hostname already matches base but carries a dev port, drop it to match production
+    if (url.hostname === baseUrl.hostname && baseUrl.port === '' && url.port) {
+      url.port = '';
     }
     return url.toString();
   } catch {
