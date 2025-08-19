@@ -21,6 +21,13 @@ type PageData = {
   twitter?: { card?: string; site?: string; creator?: string };
 };
 
+function makeAbsoluteHttps(base: string, maybeUrl?: string): string | undefined {
+  if (!maybeUrl) return undefined;
+  if (maybeUrl.startsWith('/')) return `${base}${maybeUrl}`;
+  if (maybeUrl.startsWith('http://')) return `https://${maybeUrl.slice('http://'.length)}`;
+  return maybeUrl;
+}
+
 async function getPage(slug: string): Promise<PageData | null> {
   const res = await fetch(`${process.env.BACKEND_URL}/api/pages/${slug}`, { next: { revalidate: 30 } });
   if (res.status === 404) return null;
@@ -39,7 +46,8 @@ export async function generateMetadata(props: { params: Promise<{ slug: string }
 
   const base = publicUrl();
   const hasVideo = Boolean(data.openGraph.video);
-  const poster = data.openGraph.image || (hasVideo ? `${base}/sample.jpg` : `${base}/api/og?title=${encodeURIComponent(data.openGraph.title)}&description=${encodeURIComponent(data.openGraph.description)}`);
+  const poster = makeAbsoluteHttps(base, data.openGraph.image) || (hasVideo ? `${base}/sample.jpg` : `${base}/api/og?title=${encodeURIComponent(data.openGraph.title)}&description=${encodeURIComponent(data.openGraph.description)}`);
+  const videoUrl = makeAbsoluteHttps(base, data.openGraph.video);
   const url = data.openGraph.url || `${base}/page/${slug}`;
 
   return {
@@ -51,8 +59,8 @@ export async function generateMetadata(props: { params: Promise<{ slug: string }
       type: (data.openGraph.type as any) || 'website',
       url,
       images: [{ url: poster, width: 1200, height: 630, alt: data.openGraph.title }],
-      videos: data.openGraph.video
-        ? [{ url: data.openGraph.video, width: data.openGraph.videoWidth || 1200, height: data.openGraph.videoHeight || 630, type: data.openGraph.videoType || 'video/mp4' }]
+      videos: videoUrl
+        ? [{ url: videoUrl, width: data.openGraph.videoWidth || 1200, height: data.openGraph.videoHeight || 630, type: data.openGraph.videoType || 'video/mp4' }]
         : undefined,
     },
     twitter: { card: (data.twitter?.card as any) || 'summary_large_image', title: data.openGraph.title, description: data.openGraph.description, images: [poster] },
@@ -66,16 +74,17 @@ export default async function Page(props: { params: Promise<{ slug: string }> })
 
   const base = publicUrl();
   const hasVideo = Boolean(data.openGraph.video);
-  const poster = data.openGraph.image || (hasVideo ? `${base}/sample.jpg` : `${base}/api/og?title=${encodeURIComponent(data.openGraph.title)}&description=${encodeURIComponent(data.openGraph.description)}`);
+  const poster = makeAbsoluteHttps(base, data.openGraph.image) || (hasVideo ? `${base}/sample.jpg` : `${base}/api/og?title=${encodeURIComponent(data.openGraph.title)}&description=${encodeURIComponent(data.openGraph.description)}`);
+  const videoUrl = makeAbsoluteHttps(base, data.openGraph.video);
 
   return (
     <div>
       <nav className="nav"><Link href="/">Home</Link></nav>
       <div className="card">
         <h2>{data.title}</h2>
-        {data.openGraph.video ? (
+        {videoUrl ? (
           <video controls playsInline preload="metadata" poster={poster} style={{ width: '100%', maxWidth: 800, margin: '16px auto', display: 'block', borderRadius: 8 }}>
-            <source src={data.openGraph.video} type={data.openGraph.videoType || 'video/mp4'} />
+            <source src={videoUrl} type={data.openGraph.videoType || 'video/mp4'} />
           </video>
         ) : (
           <img src={poster} alt={data.openGraph.title} style={{ width: '100%', maxWidth: 800, margin: '16px auto', display: 'block', borderRadius: 8 }} />
