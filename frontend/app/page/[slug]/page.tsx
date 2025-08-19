@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { headers } from 'next/headers';
+import { buildPosterUrls, buildTwitterMeta, buildVideoUrl, ensureAbsoluteHttps, getPublicBaseUrl } from '../../lib/og';
 
 type PageData = {
   slug: string;
@@ -22,32 +22,6 @@ type PageData = {
   twitter?: { card?: string; site?: string; creator?: string };
 };
 
-function makeAbsoluteHttps(base: string, maybeUrl?: string): string | undefined {
-  if (!maybeUrl) return undefined;
-  // Root-relative path → same-origin absolute URL
-  if (maybeUrl.startsWith('/')) return `${base}${maybeUrl}`;
-  try {
-    const baseUrl = new URL(base);
-    const url = new URL(maybeUrl);
-    // Upgrade protocol to https
-    if (url.protocol === 'http:') url.protocol = 'https:';
-    // If pointing to localhost/127.0.0.1, rewrite to current site origin
-    if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') {
-      url.protocol = baseUrl.protocol;
-      url.hostname = baseUrl.hostname;
-      url.port = baseUrl.port; // usually empty on production
-    }
-    // If hostname already matches base but carries a dev port, drop it to match production
-    if (url.hostname === baseUrl.hostname && baseUrl.port === '' && url.port) {
-      url.port = '';
-    }
-    return url.toString();
-  } catch {
-    // Unknown format → return as-is
-    return maybeUrl;
-  }
-}
-
 async function getPage(slug: string): Promise<PageData | null> {
   const res = await fetch(`${process.env.BACKEND_URL}/api/pages/${slug}`, { next: { revalidate: 30 } });
   if (res.status === 404) return null;
@@ -55,20 +29,8 @@ async function getPage(slug: string): Promise<PageData | null> {
   return res.json();
 }
 
-function requestBaseUrl(): string | null {
-  try {
-    const h = (headers() as unknown as { get(name: string): string | null });
-    const proto = h.get('x-forwarded-proto') || 'https';
-    const host = h.get('x-forwarded-host') || h.get('host');
-    if (!host) return null;
-    return `${proto}://${host}`;
-  } catch {
-    return null;
-  }
-}
-
 function publicUrl() {
-  return process.env.NEXT_PUBLIC_SITE_URL || process.env.PUBLIC_URL || requestBaseUrl() || 'http://localhost:3000';
+  return getPublicBaseUrl();
 }
 
 export async function generateMetadata(props: { params: Promise<{ slug: string }> }): Promise<Metadata> {
@@ -78,20 +40,10 @@ export async function generateMetadata(props: { params: Promise<{ slug: string }
 
   const base = publicUrl();
   const hasVideo = Boolean(data.openGraph.video);
-  const version = process.env.VERCEL_GIT_COMMIT_SHA || process.env.VERCEL_DEPLOYMENT_ID || '';
-  const v = version ? `?v=${version.slice(0,8)}` : '';
-  const poster = (makeAbsoluteHttps(base, data.openGraph.image) || (hasVideo ? `${base}/sample.jpg` : `${base}/api/og?title=${encodeURIComponent(data.openGraph.title)}&description=${encodeURIComponent(data.openGraph.description)}`)) + v;
-  const videoUrl = makeAbsoluteHttps(base, data.openGraph.video ? `${data.openGraph.video}${v}` : undefined);
-  const url = makeAbsoluteHttps(base, data.openGraph.url || `${base}/page/${slug}`)!;
-  const twitterPoster = poster.includes('/api/og') ? `${base}/sample.jpg${v}` : poster;
-
-  // Optimize for Twitter/X visibility: use smaller "summary" card when text is long, and clamp lengths
-  const clamp = (text: string, max: number) => (text.length > max ? `${text.slice(0, max - 1)}…` : text);
-  const twitterTitle = clamp(data.openGraph.title ?? data.title, 70);
-  const twitterDescription = clamp(data.openGraph.description ?? data.description, 200);
-  const twitterCard: 'summary' | 'summary_large_image' = hasVideo
-    ? 'summary_large_image'
-    : (twitterDescription.length > 120 ? 'summary' : 'summary_large_image');
+  const { poster, twitterPoster } = buildPosterUrls({ base, image: data.openGraph.image, hasVideo, title: data.openGraph.title, description: data.openGraph.description });
+  const videoUrl = buildVideoUrl(base, data.openGraph.video);
+  const url = ensureAbsoluteHttps(base, data.openGraph.url || `${base}/page/${slug}`)!;
+  const twitter = buildTwitterMeta({ hasVideo, title: data.openGraph.title ?? data.title, description: data.openGraph.description ?? data.description, image: twitterPoster });
 
   return {
     title: data.openGraph.title ?? data.title,
@@ -106,7 +58,7 @@ export async function generateMetadata(props: { params: Promise<{ slug: string }
         ? [{ url: videoUrl, width: data.openGraph.videoWidth || 1200, height: data.openGraph.videoHeight || 630, type: data.openGraph.videoType || 'video/mp4' }]
         : undefined,
     },
-    twitter: { card: twitterCard as any, title: twitterTitle, description: twitterDescription, images: [twitterPoster] },
+    twitter: twitter as any,
   } satisfies Metadata;
 }
 
@@ -117,10 +69,8 @@ export default async function Page(props: { params: Promise<{ slug: string }> })
 
   const base = publicUrl();
   const hasVideo = Boolean(data.openGraph.video);
-  const version = process.env.VERCEL_GIT_COMMIT_SHA || process.env.VERCEL_DEPLOYMENT_ID || '';
-  const v = version ? `?v=${version.slice(0,8)}` : '';
-  const poster = (makeAbsoluteHttps(base, data.openGraph.image) || (hasVideo ? `${base}/sample.jpg` : `${base}/api/og?title=${encodeURIComponent(data.openGraph.title)}&description=${encodeURIComponent(data.openGraph.description)}`)) + v;
-  const videoUrl = makeAbsoluteHttps(base, data.openGraph.video ? `${data.openGraph.video}${v}` : undefined);
+  const { poster } = buildPosterUrls({ base, image: data.openGraph.image, hasVideo, title: data.openGraph.title, description: data.openGraph.description });
+  const videoUrl = buildVideoUrl(base, data.openGraph.video);
 
   return (
     <div>
