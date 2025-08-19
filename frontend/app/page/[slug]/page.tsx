@@ -78,8 +78,10 @@ export async function generateMetadata(props: { params: Promise<{ slug: string }
 
   const base = publicUrl();
   const hasVideo = Boolean(data.openGraph.video);
-  const poster = makeAbsoluteHttps(base, data.openGraph.image) || (hasVideo ? `${base}/sample.jpg` : `${base}/api/og?title=${encodeURIComponent(data.openGraph.title)}&description=${encodeURIComponent(data.openGraph.description)}`);
-  const videoUrl = makeAbsoluteHttps(base, data.openGraph.video);
+  const version = process.env.VERCEL_GIT_COMMIT_SHA || process.env.VERCEL_DEPLOYMENT_ID || '';
+  const v = version ? `?v=${version.slice(0,8)}` : '';
+  const poster = (makeAbsoluteHttps(base, data.openGraph.image) || (hasVideo ? `${base}/sample.jpg` : `${base}/api/og?title=${encodeURIComponent(data.openGraph.title)}&description=${encodeURIComponent(data.openGraph.description)}`)) + v;
+  const videoUrl = makeAbsoluteHttps(base, data.openGraph.video ? `${data.openGraph.video}${v}` : undefined);
   const url = makeAbsoluteHttps(base, data.openGraph.url || `${base}/page/${slug}`)!;
 
   return {
@@ -106,8 +108,10 @@ export default async function Page(props: { params: Promise<{ slug: string }> })
 
   const base = publicUrl();
   const hasVideo = Boolean(data.openGraph.video);
-  const poster = makeAbsoluteHttps(base, data.openGraph.image) || (hasVideo ? `${base}/sample.jpg` : `${base}/api/og?title=${encodeURIComponent(data.openGraph.title)}&description=${encodeURIComponent(data.openGraph.description)}`);
-  const videoUrl = makeAbsoluteHttps(base, data.openGraph.video);
+  const version = process.env.VERCEL_GIT_COMMIT_SHA || process.env.VERCEL_DEPLOYMENT_ID || '';
+  const v = version ? `?v=${version.slice(0,8)}` : '';
+  const poster = (makeAbsoluteHttps(base, data.openGraph.image) || (hasVideo ? `${base}/sample.jpg` : `${base}/api/og?title=${encodeURIComponent(data.openGraph.title)}&description=${encodeURIComponent(data.openGraph.description)}`)) + v;
+  const videoUrl = makeAbsoluteHttps(base, data.openGraph.video ? `${data.openGraph.video}${v}` : undefined);
 
   return (
     <div>
