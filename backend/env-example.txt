@@ -1,0 +1,17 @@
+# Backend Environment Variables
+# Choose one of these options:
+
+# Option 1: Local development
+SITE_URL=http://localhost:3000
+PUBLIC_URL=http://localhost:3000
+
+# Option 2: With ngrok for social media testing
+# SITE_URL=http://localhost:3000
+# PUBLIC_URL=https://your-ngrok-url.ngrok-free.app
+
+# Option 3: Production deployment
+# SITE_URL=https://your-domain.com
+# PUBLIC_URL=https://your-domain.com
+
+# Database
+MONGO_URI=mongodb://127.0.0.1:27017/opengraph_task
