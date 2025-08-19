@@ -1,12 +1,8 @@
 import { ImageResponse } from 'next/og';
 import { NextRequest } from 'next/server';
 
-// Run at the edge for low latency when social bots request images
 export const runtime = 'edge';
 
-// GET /api/og?title=...&description=...
-// Generates a 1200×630 PNG on the fly. This is used as a fallback poster
-// when a page does not provide a custom image.
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const title = searchParams.get('title') || 'WebXNep';
@@ -14,7 +10,6 @@ export async function GET(request: NextRequest) {
 
   return new ImageResponse(
     (
-      // Simple card UI — tweak colors, fonts, or layout to match your brand
       <div
         style={{
           height: '100%',
@@ -76,6 +71,9 @@ export async function GET(request: NextRequest) {
         </div>
       </div>
     ),
-    { width: 1200, height: 630 }
+    {
+      width: 1200,
+      height: 630,
+    }
   );
 }

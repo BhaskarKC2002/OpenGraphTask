@@ -4,7 +4,7 @@ import { z } from 'zod';
 
 const router = Router();
 
-// Validate client payloads using zod to keep our database clean and predictable
+// Zod schema for validation
 const upsertSchema = z.object({
   slug: z.string().min(1),
   title: z.string().min(1),
@@ -29,20 +29,17 @@ const upsertSchema = z.object({
   }).optional()
 });
 
-// GET /api/pages — list all pages (useful for generateStaticParams)
 router.get('/', async (_req, res) => {
   const pages = await PageModel.find({}, { __v: 0 }).lean();
   res.json(pages);
 });
 
-// GET /api/pages/:slug — fetch a single page by slug
 router.get('/:slug', async (req, res) => {
   const page = await PageModel.findOne({ slug: req.params.slug }, { __v: 0 }).lean();
   if (!page) return res.status(404).json({ message: 'Not found' });
   res.json(page);
 });
 
-// POST /api/pages — create or update a page in one call (idempotent)
 router.post('/', async (req, res) => {
   const parsed = upsertSchema.safeParse(req.body);
   if (!parsed.success) {

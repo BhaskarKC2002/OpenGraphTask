@@ -1,20 +1,16 @@
 import PageModel from './pages/model.js';
 
-// Choose a publicly reachable base URL for Open Graph. Platforms scrape your pages
-// from the public internet, so prefer PUBLIC_URL when available (ngrok/domain),
-// otherwise fall back to SITE_URL or localhost for local development.
 function getPublicUrl(): string {
+  // Prefer PUBLIC_URL (publicly reachable), fall back to SITE_URL, then localhost
   return process.env.PUBLIC_URL || process.env.SITE_URL || 'http://localhost:3000';
 }
 
 export async function seedIfEmpty() {
   const count = await PageModel.countDocuments();
-  if (count > 0) return; // only seed once on a new database
+  if (count > 0) return;
 
   const base = getPublicUrl();
 
-  // Demo pages used by the frontend to show dynamic metadata. Feel free to edit
-  // titles/descriptions to your own content — the frontend will pick them up.
   const pages = [
     {
       slug: 'home',
