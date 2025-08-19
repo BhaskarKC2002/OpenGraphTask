@@ -84,4 +84,27 @@ export function buildTwitterMeta(params: {
   return { card, title: clampedTitle, description: clampedDesc, images: [image] };
 }
 
+// Minimal shape we need from a page's openGraph field
+export type OpenGraphInfo = {
+  title: string;
+  description: string;
+  image?: string;
+  video?: string;
+  videoType?: string;
+  videoWidth?: number;
+  videoHeight?: number;
+  type?: string;
+  url?: string;
+};
+
+// Convenience: compute all media-related values for both metadata and page UI
+export function computePageAssets(base: string, og: OpenGraphInfo, slug: string, fallbackTitle: string, fallbackDescription: string) {
+  const hasVideo = Boolean(og.video);
+  const { poster, twitterPoster } = buildPosterUrls({ base, image: og.image, hasVideo, title: og.title ?? fallbackTitle, description: og.description ?? fallbackDescription });
+  const videoUrl = buildVideoUrl(base, og.video);
+  const url = ensureAbsoluteHttps(base, og.url || `${base}/page/${slug}`)!;
+  const twitter = buildTwitterMeta({ hasVideo, title: og.title ?? fallbackTitle, description: og.description ?? fallbackDescription, image: twitterPoster });
+  return { hasVideo, poster, twitterPoster, videoUrl, url, twitter };
+}
+
 

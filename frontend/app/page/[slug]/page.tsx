@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { buildPosterUrls, buildTwitterMeta, buildVideoUrl, ensureAbsoluteHttps, getPublicBaseUrl } from '../../lib/og';
+import { computePageAssets, getPublicBaseUrl } from '../../lib/og';
 
 type PageData = {
   slug: string;
@@ -39,11 +39,7 @@ export async function generateMetadata(props: { params: Promise<{ slug: string }
   if (!data) return { title: 'Not found', description: 'The page was not found', robots: { index: false } };
 
   const base = publicUrl();
-  const hasVideo = Boolean(data.openGraph.video);
-  const { poster, twitterPoster } = buildPosterUrls({ base, image: data.openGraph.image, hasVideo, title: data.openGraph.title, description: data.openGraph.description });
-  const videoUrl = buildVideoUrl(base, data.openGraph.video);
-  const url = ensureAbsoluteHttps(base, data.openGraph.url || `${base}/page/${slug}`)!;
-  const twitter = buildTwitterMeta({ hasVideo, title: data.openGraph.title ?? data.title, description: data.openGraph.description ?? data.description, image: twitterPoster });
+  const { hasVideo, poster, videoUrl, url, twitter } = computePageAssets(base, data.openGraph as any, slug, data.title, data.description);
 
   return {
     title: data.openGraph.title ?? data.title,
@@ -68,9 +64,7 @@ export default async function Page(props: { params: Promise<{ slug: string }> })
   if (!data) return <div className="card">Page not found. <Link href="/">Go back</Link></div>;
 
   const base = publicUrl();
-  const hasVideo = Boolean(data.openGraph.video);
-  const { poster } = buildPosterUrls({ base, image: data.openGraph.image, hasVideo, title: data.openGraph.title, description: data.openGraph.description });
-  const videoUrl = buildVideoUrl(base, data.openGraph.video);
+  const { videoUrl, poster } = computePageAssets(base, data.openGraph as any, slug, data.title, data.description);
 
   return (
     <div>
