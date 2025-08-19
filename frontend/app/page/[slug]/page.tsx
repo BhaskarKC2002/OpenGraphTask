@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { headers } from 'next/headers';
 
 type PageData = {
   slug: string;
@@ -54,8 +55,20 @@ async function getPage(slug: string): Promise<PageData | null> {
   return res.json();
 }
 
+function requestBaseUrl(): string | null {
+  try {
+    const h = (headers() as unknown as { get(name: string): string | null });
+    const proto = h.get('x-forwarded-proto') || 'https';
+    const host = h.get('x-forwarded-host') || h.get('host');
+    if (!host) return null;
+    return `${proto}://${host}`;
+  } catch {
+    return null;
+  }
+}
+
 function publicUrl() {
-  return process.env.NEXT_PUBLIC_SITE_URL || process.env.PUBLIC_URL || 'http://localhost:3000';
+  return process.env.NEXT_PUBLIC_SITE_URL || process.env.PUBLIC_URL || requestBaseUrl() || 'http://localhost:3000';
 }
 
 export async function generateMetadata(props: { params: Promise<{ slug: string }> }): Promise<Metadata> {
