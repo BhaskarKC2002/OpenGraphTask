@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { computePageAssets, getPublicBaseUrl } from '../../lib/og';
+import { computePageAssets, getPublicBaseUrl, type OpenGraphInfo } from '../../lib/og';
 
 type PageData = {
   slug: string;
@@ -8,17 +8,7 @@ type PageData = {
   description: string;
   body?: string;
   canonicalUrl?: string;
-  openGraph: {
-    title: string;
-    description: string;
-    image?: string;
-    video?: string;
-    videoType?: string;
-    videoWidth?: number;
-    videoHeight?: number;
-    type?: string;
-    url?: string;
-  };
+  openGraph: OpenGraphInfo;
   twitter?: { card?: string; site?: string; creator?: string };
 };
 
